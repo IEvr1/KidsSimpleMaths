@@ -12,7 +12,11 @@
 - Στόχος πόντων από γονέα (PIN προεπιλογής: 1234)
 - Ελληνικά / Αγγλικά (toggle ΕΛ | EN)
 
-## Run
+## Live (production)
+
+**https://kids-simple-maths.vercel.app**
+
+## Run locally
 
 ```bash
 npm install
@@ -20,6 +24,13 @@ npm run web      # browser
 npm run android  # Android (Expo Go)
 npm run ios      # iOS (macOS + Expo Go)
 ```
+
+## Deploy (web)
+
+Push to GitHub, then Vercel builds automatically (or run `npm run build:web` locally).
+
+- GitHub: https://github.com/IEvr1/KidsSimpleMaths
+- Vercel project: `kids-simple-maths`
 
 ## Parent zone
 
