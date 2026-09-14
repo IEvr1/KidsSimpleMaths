@@ -25,7 +25,7 @@ export const el = {
   checkAnswer: 'Έλεγχος',
   enterHint: 'Πάτα Enter ή το κουμπί Έλεγχος',
   emptyAnswer: 'Γράψε έναν αριθμό πρώτα',
-  nextQuestion: 'Επόμενη',
+  nextQuestion: 'Επόμενο',
   back: 'Πίσω',
   progressTitle: 'Η πρόοδός σου',
   progressSubtitle: 'Συνέχισε μέχρι να φτάσεις τον στόχο!',

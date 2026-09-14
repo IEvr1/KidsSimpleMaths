@@ -93,7 +93,6 @@ export default function PracticeScreen() {
     } else {
       setStreak(0);
       setFeedback('wrong');
-      setTimeout(nextQuestion, 1800);
     }
   };
 
@@ -153,17 +152,21 @@ export default function PracticeScreen() {
         </View>
       ) : null}
 
-      <AnswerInput
-        compact
-        value={answerInput}
-        onChangeText={setAnswerInput}
-        onSubmit={handleSubmit}
-        placeholder={t('enterAnswer')}
-        submitLabel={t('checkAnswer')}
-        disabled={submitted}
-        inputRef={inputRef}
-        state={inputState}
-      />
+      {feedback === 'wrong' ? (
+        <PrimaryButton label={t('nextQuestion')} onPress={nextQuestion} />
+      ) : (
+        <AnswerInput
+          compact
+          value={answerInput}
+          onChangeText={setAnswerInput}
+          onSubmit={handleSubmit}
+          placeholder={t('enterAnswer')}
+          submitLabel={t('checkAnswer')}
+          disabled={submitted}
+          inputRef={inputRef}
+          state={inputState}
+        />
+      )}
 
       <CelebrationOverlay
         visible={showCelebration}
