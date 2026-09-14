@@ -6,6 +6,7 @@ import { ProgressBar } from '@/src/components/ProgressBar';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
 import { useApp } from '@/src/context/AppContext';
 import { formatPoints } from '@/src/logic/formatPoints';
+import { goHome } from '@/src/navigation/goHome';
 import { useI18n } from '@/src/i18n/context';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
@@ -18,9 +19,12 @@ export default function ProgressScreen() {
   const percent = goal > 0 ? Math.min(100, Math.round((points / goal) * 100)) : 0;
 
   return (
-    <ScreenLayout>
+    <ScreenLayout
+      onSettingsPress={() => router.push('/parent')}
+      settingsLabel={t('settings')}
+    >
       <View style={styles.header}>
-        <PrimaryButton label={t('back')} onPress={() => router.back()} variant="secondary" />
+        <PrimaryButton label={t('back')} onPress={() => goHome(router)} variant="secondary" />
       </View>
 
       <View style={styles.card}>

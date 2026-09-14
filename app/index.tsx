@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { OperationButton } from '@/src/components/OperationButton';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
@@ -19,8 +18,7 @@ const OPERATIONS: Operation[] = ['add', 'subtract', 'multiply', 'divide'];
 export default function HomeScreen() {
   const router = useRouter();
   const { t, tOperation } = useI18n();
-  const { points, goal } = useApp();
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { points, goal, childName } = useApp();
 
   const goPractice = (op?: Operation) => {
     if (op) {
@@ -31,27 +29,16 @@ export default function HomeScreen() {
     }
   };
 
-  const startHold = () => {
-    holdTimer.current = setTimeout(() => {
-      router.push('/parent');
-    }, 3000);
-  };
-
-  const cancelHold = () => {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-  };
-
   return (
-    <ScreenLayout>
+    <ScreenLayout
+      onSettingsPress={() => router.push('/parent')}
+      settingsLabel={t('settings')}
+    >
       <View style={styles.hero}>
-        <View style={styles.mascot}>
-          <Text style={styles.mascotSymbol}>+</Text>
-        </View>
         <Text style={styles.title}>{t('appName')}</Text>
-        <Text style={styles.tagline}>{t('tagline')}</Text>
+        {childName ? (
+          <Text style={styles.greeting}>{t('greeting', { name: childName })}</Text>
+        ) : null}
       </View>
 
       <View style={styles.progressCard}>
@@ -91,21 +78,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <View style={styles.footer}>
-        <PrimaryButton
-          label={t('progress')}
-          onPress={() => router.push('/progress')}
-          variant="secondary"
-        />
-        <Pressable
-          accessibilityHint={t('holdToOpen')}
-          onPressIn={startHold}
-          onPressOut={cancelHold}
-          style={styles.parentHint}
-        >
-          <Text style={styles.parentHintText}>{t('holdToOpen')}</Text>
-        </Pressable>
-      </View>
     </ScreenLayout>
   );
 }
@@ -116,29 +88,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingTop: spacing.md,
   },
-  mascot: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.sun,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: colors.sunDark,
-  },
-  mascotSymbol: {
-    fontSize: 48,
-    fontFamily: 'Nunito_800ExtraBold',
-    color: colors.white,
-  },
   title: {
     ...typography.hero,
     color: colors.ink,
     textAlign: 'center',
   },
-  tagline: {
-    ...typography.body,
-    color: colors.inkMuted,
+  greeting: {
+    ...typography.subtitle,
+    color: colors.grassDark,
     textAlign: 'center',
   },
   progressCard: {
@@ -168,18 +125,5 @@ const styles = StyleSheet.create({
   opsRow: {
     flexDirection: 'row',
     gap: spacing.md,
-  },
-  footer: {
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  parentHint: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  parentHintText: {
-    ...typography.label,
-    color: colors.inkMuted,
-    fontSize: 14,
   },
 });

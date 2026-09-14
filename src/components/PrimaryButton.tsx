@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors } from '@/src/theme/colors';
 import { layout, spacing } from '@/src/theme/spacing';
@@ -26,6 +26,7 @@ export function PrimaryButton({ label, onPress, variant = 'primary', compact }: 
       style={({ pressed }) => [
         styles.button,
         compact && styles.buttonCompact,
+        Platform.OS === 'web' && styles.buttonWeb,
         { backgroundColor: bg },
         pressed && styles.pressed,
       ]}
@@ -36,10 +37,14 @@ export function PrimaryButton({ label, onPress, variant = 'primary', compact }: 
 }
 
 const styles = StyleSheet.create({
+  buttonWeb: {
+    cursor: 'pointer',
+  },
   buttonCompact: {
     minHeight: 44,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 3,
+    zIndex: 2,
   },
   button: {
     minHeight: layout.buttonMinHeight,

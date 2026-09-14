@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LangToggle } from './LangToggle';
+import { SettingsButton } from './SettingsButton';
 import { colors } from '@/src/theme/colors';
 import { layout, spacing } from '@/src/theme/spacing';
 
@@ -17,6 +18,8 @@ type Props = {
   children: ReactNode;
   scroll?: boolean;
   showLangToggle?: boolean;
+  onSettingsPress?: () => void;
+  settingsLabel?: string;
   keyboardAvoiding?: boolean;
   compact?: boolean;
 };
@@ -25,6 +28,8 @@ export function ScreenLayout({
   children,
   scroll = true,
   showLangToggle = true,
+  onSettingsPress,
+  settingsLabel = 'Settings',
   keyboardAvoiding = false,
   compact = false,
 }: Props) {
@@ -36,9 +41,15 @@ export function ScreenLayout({
         scroll && styles.innerScroll,
       ]}
     >
-      {showLangToggle ? (
-        <View style={styles.langRow}>
-          <LangToggle />
+      {showLangToggle || onSettingsPress ? (
+        <View style={styles.topBar}>
+          {onSettingsPress ? (
+            <SettingsButton
+              accessibilityLabel={settingsLabel}
+              onPress={onSettingsPress}
+            />
+          ) : null}
+          {showLangToggle ? <LangToggle /> : null}
         </View>
       ) : null}
       {children}
@@ -107,8 +118,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: spacing.md,
   },
-  langRow: {
-    alignItems: 'flex-end',
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
     paddingTop: spacing.sm,
   },
 });

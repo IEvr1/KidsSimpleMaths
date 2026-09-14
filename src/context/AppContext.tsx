@@ -8,16 +8,26 @@ import React, {
 } from 'react';
 
 import type { Language } from '@/src/i18n';
+import {
+  clampAddSubMax,
+  clampDivideMax,
+  clampMultiplyMax,
+} from '@/src/logic/limits';
 import { roundPoints } from '@/src/logic/scoring';
 import {
   defaultState,
   loadState,
   resetPoints as resetPointsStorage,
+  saveAddSubMax,
+  saveChildName,
   saveGoal,
   saveLanguage,
   saveParentPin,
   savePoints,
   saveStreak,
+  saveTargetBonus,
+  saveDivideMax,
+  saveMultiplyMax,
   type StoredState,
 } from '@/src/storage';
 
@@ -28,6 +38,11 @@ type AppContextValue = StoredState & {
   setStreak: (streak: number) => void;
   updateGoal: (goal: number) => void;
   updatePin: (pin: string) => void;
+  updateChildName: (name: string) => void;
+  updateTargetBonus: (bonus: number) => void;
+  updateAddSubMax: (value: number) => void;
+  updateMultiplyMax: (value: number) => void;
+  updateDivideMax: (value: number) => void;
   resetPoints: () => Promise<void>;
   goalReached: boolean;
 };
@@ -73,6 +88,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveParentPin(parentPin);
   }, []);
 
+  const updateChildName = useCallback((childName: string) => {
+    setState((prev) => ({ ...prev, childName }));
+    saveChildName(childName);
+  }, []);
+
+  const updateTargetBonus = useCallback((targetBonus: number) => {
+    setState((prev) => ({ ...prev, targetBonus }));
+    saveTargetBonus(targetBonus);
+  }, []);
+
+  const updateAddSubMax = useCallback((addSubMax: number) => {
+    const value = clampAddSubMax(addSubMax);
+    setState((prev) => ({ ...prev, addSubMax: value }));
+    saveAddSubMax(value);
+  }, []);
+
+  const updateMultiplyMax = useCallback((multiplyMax: number) => {
+    const value = clampMultiplyMax(multiplyMax);
+    setState((prev) => ({ ...prev, multiplyMax: value }));
+    saveMultiplyMax(value);
+  }, []);
+
+  const updateDivideMax = useCallback((divideMax: number) => {
+    const value = clampDivideMax(divideMax);
+    setState((prev) => ({ ...prev, divideMax: value }));
+    saveDivideMax(value);
+  }, []);
+
   const resetPoints = useCallback(async () => {
     await resetPointsStorage();
     setState((prev) => ({ ...prev, points: 0, streak: 0 }));
@@ -89,6 +132,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStreak,
       updateGoal,
       updatePin,
+      updateChildName,
+      updateTargetBonus,
+      updateAddSubMax,
+      updateMultiplyMax,
+      updateDivideMax,
       resetPoints,
       goalReached,
     }),
@@ -100,6 +148,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStreak,
       updateGoal,
       updatePin,
+      updateChildName,
+      updateTargetBonus,
+      updateAddSubMax,
+      updateMultiplyMax,
+      updateDivideMax,
       resetPoints,
       goalReached,
     ],

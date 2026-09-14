@@ -11,6 +11,7 @@ import { useApp } from '@/src/context/AppContext';
 import { useI18n } from '@/src/i18n/context';
 import { generateQuestion } from '@/src/logic/generateQuestion';
 import { formatPoints } from '@/src/logic/formatPoints';
+import { goHome } from '@/src/navigation/goHome';
 import { calculateScore, getPointsPerAnswer } from '@/src/logic/scoring';
 import type { Operation, Question } from '@/src/logic/types';
 import { colors } from '@/src/theme/colors';
@@ -23,14 +24,27 @@ export default function PracticeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ op?: string }>();
   const { t, tOperation } = useI18n();
-  const { points, goal, streak, addPoints, setStreak } = useApp();
+  const {
+    points,
+    goal,
+    streak,
+    addSubMax,
+    multiplyMax,
+    divideMax,
+    addPoints,
+    setStreak,
+  } = useApp();
   const inputRef = useRef<TextInput>(null);
 
   const operation = VALID_OPS.includes(params.op as Operation)
     ? (params.op as Operation)
     : 'add';
 
-  const [question, setQuestion] = useState<Question>(() => generateQuestion(operation));
+  const limits = { addSubMax, multiplyMax, divideMax };
+
+  const [question, setQuestion] = useState<Question>(() =>
+    generateQuestion(operation, limits),
+  );
   const [answerInput, setAnswerInput] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -39,14 +53,14 @@ export default function PracticeScreen() {
   const [emptyHint, setEmptyHint] = useState(false);
 
   const nextQuestion = useCallback(() => {
-    setQuestion(generateQuestion(operation));
+    setQuestion(generateQuestion(operation, limits));
     setAnswerInput('');
     setSubmitted(false);
     setFeedback(null);
     setStreakBonusMsg(false);
     setEmptyHint(false);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, [operation]);
+  }, [operation, addSubMax, multiplyMax, divideMax]);
 
   useEffect(() => {
     nextQuestion();
@@ -73,6 +87,7 @@ export default function PracticeScreen() {
       setStreakBonusMsg(result.streakBonus);
       if (result.goalReached) {
         setShowCelebration(true);
+        return;
       }
       setTimeout(nextQuestion, result.streakBonus ? 1200 : 800);
     } else {
@@ -94,7 +109,7 @@ export default function PracticeScreen() {
         <PrimaryButton
           compact
           label={t('back')}
-          onPress={() => router.back()}
+          onPress={() => goHome(router)}
           variant="secondary"
         />
         <Text style={styles.opLabel}>{tOperation(operation)}</Text>
@@ -145,7 +160,6 @@ export default function PracticeScreen() {
         onSubmit={handleSubmit}
         placeholder={t('enterAnswer')}
         submitLabel={t('checkAnswer')}
-        enterHint={t('enterHint')}
         disabled={submitted}
         inputRef={inputRef}
         state={inputState}
@@ -154,8 +168,12 @@ export default function PracticeScreen() {
       <CelebrationOverlay
         visible={showCelebration}
         message={t('goalReached')}
+        subtitle={t('goalReachedSubtitle')}
         buttonLabel={t('keepPlaying')}
-        onDismiss={() => setShowCelebration(false)}
+        onDismiss={() => {
+          setShowCelebration(false);
+          nextQuestion();
+        }}
       />
     </ScreenLayout>
   );
