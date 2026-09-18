@@ -11,12 +11,15 @@ import {
 
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
-import { MultiplierZonePicker } from '@/src/components/MultiplierZonePicker';
+import { SettingZonePicker } from '@/src/components/MultiplierZonePicker';
 import { TableToggleGrid } from '@/src/components/TableToggleGrid';
 import { useApp } from '@/src/context/AppContext';
 import { useI18n } from '@/src/i18n/context';
 import { DEFAULT_ADD_SUB_MAX, clampAddSubMax } from '@/src/logic/limits';
 import type { MultiplierZone } from '@/src/logic/multiplierZone';
+import { MULTIPLIER_ZONES } from '@/src/logic/multiplierZone';
+import type { SumZone } from '@/src/logic/sumZone';
+import { SUM_ZONES } from '@/src/logic/sumZone';
 import {
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
@@ -42,11 +45,13 @@ export default function ParentScreen() {
     multiplyTables,
     divideDivisors,
     multiplierZone,
+    sumZone,
     updateChildName,
     updateAddSubMax,
     updateMultiplyTables,
     updateDivideDivisors,
     updateMultiplierZone,
+    updateSumZone,
     resetPoints,
   } = useApp();
 
@@ -64,6 +69,7 @@ export default function ParentScreen() {
   ]);
   const [multiplierZoneSelection, setMultiplierZoneSelection] =
     useState<MultiplierZone>(multiplierZone);
+  const [sumZoneSelection, setSumZoneSelection] = useState<SumZone>(sumZone);
   const [newPin, setNewPin] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
 
@@ -74,6 +80,13 @@ export default function ParentScreen() {
     setMultiplySelection([...multiplyTables]);
     setDivideSelection([...divideDivisors]);
     setMultiplierZoneSelection(multiplierZone);
+    setSumZoneSelection(sumZone);
+  };
+
+  const sumZoneLabels: Record<SumZone, string> = {
+    '0-8': t('sumZone_0-8'),
+    '9-19': t('sumZone_9-19'),
+    '0-19': t('sumZone_0-19'),
   };
 
   const multiplierZoneLabels: Record<MultiplierZone, string> = {
@@ -112,6 +125,7 @@ export default function ParentScreen() {
       normalizeTableSelection(divideSelection, DEFAULT_DIVIDE_DIVISORS),
     );
     updateMultiplierZone(multiplierZoneSelection);
+    updateSumZone(sumZoneSelection);
 
     if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
       updatePin(newPin);
@@ -220,15 +234,25 @@ export default function ParentScreen() {
           placeholderTextColor={colors.inkMuted}
         />
 
+        <Text style={styles.label}>{t('sumZone')}</Text>
+        <Text style={styles.hintSmall}>{t('sumZoneHint')}</Text>
+        <SettingZonePicker
+          value={sumZoneSelection}
+          onChange={setSumZoneSelection}
+          options={SUM_ZONES}
+          labels={sumZoneLabels}
+        />
+
         <Text style={styles.label}>{t('multiplyTables')}</Text>
         <Text style={styles.hintSmall}>{t('multiplyTablesHint')}</Text>
         <TableToggleGrid selection={multiplySelection} onChange={setMultiplySelection} />
 
         <Text style={styles.label}>{t('multiplierZone')}</Text>
         <Text style={styles.hintSmall}>{t('multiplierZoneHint')}</Text>
-        <MultiplierZonePicker
+        <SettingZonePicker
           value={multiplierZoneSelection}
           onChange={setMultiplierZoneSelection}
+          options={MULTIPLIER_ZONES}
           labels={multiplierZoneLabels}
         />
 

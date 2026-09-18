@@ -1,23 +1,25 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import {
-  MULTIPLIER_ZONES,
-  type MultiplierZone,
-} from '@/src/logic/multiplierZone';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
 import { typography } from '@/src/theme/typography';
 
-type Props = {
-  value: MultiplierZone;
-  onChange: (zone: MultiplierZone) => void;
-  labels: Record<MultiplierZone, string>;
+type Props<T extends string> = {
+  value: T;
+  onChange: (zone: T) => void;
+  options: readonly T[];
+  labels: Record<T, string>;
 };
 
-export function MultiplierZonePicker({ value, onChange, labels }: Props) {
+export function SettingZonePicker<T extends string>({
+  value,
+  onChange,
+  options,
+  labels,
+}: Props<T>) {
   return (
     <View style={styles.row}>
-      {MULTIPLIER_ZONES.map((zone) => {
+      {options.map((zone) => {
         const isSelected = value === zone;
         return (
           <Pressable
@@ -36,6 +38,9 @@ export function MultiplierZonePicker({ value, onChange, labels }: Props) {
     </View>
   );
 }
+
+/** @deprecated use SettingZonePicker */
+export const MultiplierZonePicker = SettingZonePicker;
 
 const styles = StyleSheet.create({
   row: {

@@ -10,6 +10,7 @@ import React, {
 import type { Language } from '@/src/i18n';
 import { clampAddSubMax } from '@/src/logic/limits';
 import type { MultiplierZone } from '@/src/logic/multiplierZone';
+import type { SumZone } from '@/src/logic/sumZone';
 import {
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
@@ -31,6 +32,7 @@ import {
   saveTargetBonus,
   saveDivideDivisors,
   saveMultiplierZone,
+  saveSumZone,
   saveMultiplyTables,
   type StoredState,
 } from '@/src/storage';
@@ -48,6 +50,7 @@ type AppContextValue = StoredState & {
   updateMultiplyTables: (selection: TableSelection) => void;
   updateDivideDivisors: (selection: TableSelection) => void;
   updateMultiplierZone: (zone: MultiplierZone) => void;
+  updateSumZone: (zone: SumZone) => void;
   resetPoints: () => Promise<void>;
   goalReached: boolean;
 };
@@ -126,6 +129,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveMultiplierZone(multiplierZone);
   }, []);
 
+  const updateSumZone = useCallback((sumZone: SumZone) => {
+    setState((prev) => ({ ...prev, sumZone }));
+    saveSumZone(sumZone);
+  }, []);
+
   const resetPoints = useCallback(async () => {
     await resetPointsStorage();
     setState((prev) => ({ ...prev, points: 0, streak: 0 }));
@@ -148,6 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateMultiplyTables,
       updateDivideDivisors,
       updateMultiplierZone,
+      updateSumZone,
       resetPoints,
       goalReached,
     }),
@@ -165,6 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateMultiplyTables,
       updateDivideDivisors,
       updateMultiplierZone,
+      updateSumZone,
       resetPoints,
       goalReached,
     ],

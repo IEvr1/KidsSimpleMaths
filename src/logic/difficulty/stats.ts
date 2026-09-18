@@ -8,6 +8,7 @@ import {
   randomMultiplierInZone,
   type MultiplierZone,
 } from '../multiplierZone';
+import { questionMatchesSumZone, type SumZone } from '../sumZone';
 import type { Question } from '../types';
 
 export const MULTIPLY_EASY_MAX = 4;
@@ -114,6 +115,7 @@ function recordAddSubResult(
   question: Question,
   correct: boolean,
   addSubMax: number,
+  sumZone: SumZone,
 ): OpDifficulty {
   const next = {
     ...profile,
@@ -123,7 +125,7 @@ function recordAddSubResult(
   const operands = [question.a, question.b];
   if (correct) {
     operands.forEach((n) => bumpWeak(next.weak, n, -1));
-    if (questionWithinBand(question, next.band, addSubMax)) {
+    if (questionMatchesSumZone(question, sumZone, addSubMax)) {
       next.bandCorrectStreak += 1;
       if (next.bandCorrectStreak >= PROMOTE_STREAK && next.band !== 'full') {
         next.band = promoteBand(next.band);
@@ -143,8 +145,9 @@ export function recordAddResult(
   question: Question,
   correct: boolean,
   addSubMax: number,
+  sumZone: SumZone,
 ): OpDifficulty {
-  return recordAddSubResult(profile, question, correct, addSubMax);
+  return recordAddSubResult(profile, question, correct, addSubMax, sumZone);
 }
 
 export function recordSubtractResult(
@@ -152,8 +155,9 @@ export function recordSubtractResult(
   question: Question,
   correct: boolean,
   addSubMax: number,
+  sumZone: SumZone,
 ): OpDifficulty {
-  return recordAddSubResult(profile, question, correct, addSubMax);
+  return recordAddSubResult(profile, question, correct, addSubMax, sumZone);
 }
 
 export function recordMultiplyResult(

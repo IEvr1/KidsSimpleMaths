@@ -1,9 +1,7 @@
 import type { DifficultyProfile } from './difficulty/types';
 import {
-  pickAdaptiveAddPair,
   pickAdaptiveDivideFromDivisors,
   pickAdaptiveMultiplyFromTables,
-  pickAdaptiveSubtractPair,
 } from './difficulty/stats';
 import type { OperationLimits } from './limits';
 import {
@@ -11,12 +9,17 @@ import {
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
   DEFAULT_MULTIPLIER_ZONE,
+  DEFAULT_SUM_ZONE,
   clampAddSubMax,
 } from './limits';
 import {
   randomMultiplierInZone,
   type MultiplierZone,
 } from './multiplierZone';
+import {
+  pickAddPairForSumZone,
+  pickSubtractPairForSumZone,
+} from './sumZone';
 import {
   getEnabledNumbers,
   type TableSelection,
@@ -86,6 +89,7 @@ export function generateQuestion(
     DEFAULT_DIVIDE_DIVISORS,
   );
   const multiplierZone = limits?.multiplierZone ?? DEFAULT_MULTIPLIER_ZONE;
+  const sumZone = limits?.sumZone ?? DEFAULT_SUM_ZONE;
 
   let a: number;
   let b: number;
@@ -94,23 +98,13 @@ export function generateQuestion(
 
   switch (operation) {
     case 'add': {
-      if (difficulty) {
-        [a, b] = pickAdaptiveAddPair(addSubMax, difficulty);
-      } else {
-        a = randomInt(1, addSubMax);
-        b = randomInt(1, addSubMax);
-      }
+      [a, b] = pickAddPairForSumZone(addSubMax, sumZone, difficulty);
       answer = a + b;
       symbol = '+';
       break;
     }
     case 'subtract': {
-      if (difficulty) {
-        [a, b] = pickAdaptiveSubtractPair(addSubMax, difficulty);
-      } else {
-        a = randomInt(1, addSubMax);
-        b = randomInt(1, a);
-      }
+      [a, b] = pickSubtractPairForSumZone(addSubMax, sumZone, difficulty);
       answer = a - b;
       symbol = '-';
       break;

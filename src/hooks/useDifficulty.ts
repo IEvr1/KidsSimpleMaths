@@ -10,6 +10,7 @@ import {
 } from '@/src/logic/difficulty/stats';
 import type { DifficultyProfile, DifficultyStore } from '@/src/logic/difficulty/types';
 import { getEnabledNumbers, type TableSelection } from '@/src/logic/tableSelection';
+import type { SumZone } from '@/src/logic/sumZone';
 import type { Operation, Question } from '@/src/logic/types';
 import { loadDifficultyStore, saveDifficultyStore } from '@/src/storage/difficulty';
 
@@ -18,6 +19,7 @@ export function useDifficulty(
   addSubMax: number,
   multiplyTables: TableSelection,
   divideDivisors: TableSelection,
+  sumZone: SumZone,
 ) {
   const enabledMultiplyTables = getEnabledNumbers(multiplyTables);
   const enabledDivideDivisors = getEnabledNumbers(divideDivisors);
@@ -47,12 +49,18 @@ export function useDifficulty(
   const recordResult = useCallback(
     (question: Question, correct: boolean) => {
       if (operation === 'add') {
-        const next = recordAddResult(store.add, question, correct, addSubMax);
+        const next = recordAddResult(store.add, question, correct, addSubMax, sumZone);
         const updated = { ...store, add: next };
         setStore(updated);
         saveDifficultyStore(updated);
       } else if (operation === 'subtract') {
-        const next = recordSubtractResult(store.subtract, question, correct, addSubMax);
+        const next = recordSubtractResult(
+          store.subtract,
+          question,
+          correct,
+          addSubMax,
+          sumZone,
+        );
         const updated = { ...store, subtract: next };
         setStore(updated);
         saveDifficultyStore(updated);
@@ -78,7 +86,7 @@ export function useDifficulty(
         saveDifficultyStore(updated);
       }
     },
-    [operation, store, addSubMax, enabledMultiplyTables, enabledDivideDivisors],
+    [operation, store, addSubMax, sumZone, enabledMultiplyTables, enabledDivideDivisors],
   );
 
   return { profile, recordResult, loaded };
