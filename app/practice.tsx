@@ -5,10 +5,10 @@ import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { AnswerInput } from '@/src/components/AnswerInput';
 import { CelebrationOverlay } from '@/src/components/CelebrationOverlay';
 import { PrimaryButton } from '@/src/components/PrimaryButton';
-import { ProgressBar } from '@/src/components/ProgressBar';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
 import { useApp } from '@/src/context/AppContext';
 import { useI18n } from '@/src/i18n/context';
+import { useDifficulty } from '@/src/hooks/useDifficulty';
 import { generateQuestion } from '@/src/logic/generateQuestion';
 import { formatPoints } from '@/src/logic/formatPoints';
 import { goHome } from '@/src/navigation/goHome';
@@ -41,6 +41,17 @@ export default function PracticeScreen() {
     : 'add';
 
   const limits = { addSubMax, multiplyMax, divideMax };
+  const { profile, recordResult, loaded } = useDifficulty(
+    operation,
+    addSubMax,
+    multiplyMax,
+    divideMax,
+  );
+
+  const makeQuestion = useCallback(
+    () => generateQuestion(operation, limits, profile),
+    [operation, addSubMax, multiplyMax, divideMax, profile],
+  );
 
   const [question, setQuestion] = useState<Question>(() =>
     generateQuestion(operation, limits),
@@ -52,19 +63,27 @@ export default function PracticeScreen() {
   const [streakBonusMsg, setStreakBonusMsg] = useState(false);
   const [emptyHint, setEmptyHint] = useState(false);
 
+  const resetForQuestion = useCallback(
+    (q: Question) => {
+      setQuestion(q);
+      setAnswerInput('');
+      setSubmitted(false);
+      setFeedback(null);
+      setStreakBonusMsg(false);
+      setEmptyHint(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    },
+    [],
+  );
+
   const nextQuestion = useCallback(() => {
-    setQuestion(generateQuestion(operation, limits));
-    setAnswerInput('');
-    setSubmitted(false);
-    setFeedback(null);
-    setStreakBonusMsg(false);
-    setEmptyHint(false);
-    setTimeout(() => inputRef.current?.focus(), 100);
-  }, [operation, addSubMax, multiplyMax, divideMax]);
+    resetForQuestion(makeQuestion());
+  }, [makeQuestion, resetForQuestion]);
 
   useEffect(() => {
-    nextQuestion();
-  }, [operation, nextQuestion]);
+    if (!loaded) return;
+    resetForQuestion(generateQuestion(operation, limits, profile));
+  }, [operation, loaded]);
 
   const handleSubmit = () => {
     if (submitted) return;
@@ -78,6 +97,8 @@ export default function PracticeScreen() {
     setEmptyHint(false);
     const parsed = parseInt(answerInput, 10);
     const isCorrect = parsed === question.answer;
+
+    recordResult(question, isCorrect);
 
     if (isCorrect) {
       const result = calculateScore(operation, points, streak, goal, true);
@@ -100,7 +121,6 @@ export default function PracticeScreen() {
     feedback === 'correct' ? 'correct' : feedback === 'wrong' ? 'wrong' : 'default';
 
   const questionText = `${question.a} ${question.symbol} ${question.b} = ?`;
-  const percent = goal > 0 ? Math.min(100, Math.round((points / goal) * 100)) : 0;
 
   return (
     <ScreenLayout scroll={false} showLangToggle={false} compact keyboardAvoiding>
@@ -120,9 +140,6 @@ export default function PracticeScreen() {
         </Text>
         <Text style={styles.streakText}>{t('streak', { count: streak })}</Text>
       </View>
-
-      <ProgressBar compact current={points} goal={goal} />
-      <Text style={styles.percentInline}>{percent}%</Text>
 
       <View style={styles.questionCard}>
         <Text style={styles.question}>{questionText}</Text>
@@ -210,13 +227,6 @@ const styles = StyleSheet.create({
     ...typography.label,
     fontSize: 15,
     color: colors.sunDark,
-  },
-  percentInline: {
-    ...typography.label,
-    fontSize: 13,
-    color: colors.inkMuted,
-    textAlign: 'right',
-    marginTop: -4,
   },
   questionCard: {
     backgroundColor: colors.white,

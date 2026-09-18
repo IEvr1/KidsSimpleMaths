@@ -53,6 +53,9 @@ export const en = {
   saveGoal: 'Save goal',
   resetPoints: 'Reset points',
   resetConfirm: 'Reset all points?',
+  resetDifficulty: 'Reset difficulty stats',
+  resetDifficultyConfirm:
+    'Reset difficulty levels and weak-number tracking for all operations?',
   yes: 'Yes',
   no: 'No',
   saved: 'Saved!',

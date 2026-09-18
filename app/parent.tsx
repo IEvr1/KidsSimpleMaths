@@ -22,6 +22,7 @@ import {
   clampMultiplyMax,
 } from '@/src/logic/limits';
 import { goHome } from '@/src/navigation/goHome';
+import { resetDifficultyStore } from '@/src/storage/difficulty';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
 import { typography } from '@/src/theme/typography';
@@ -113,6 +114,19 @@ export default function ParentScreen() {
         text: t('yes'),
         style: 'destructive',
         onPress: () => resetPoints(),
+      },
+    ]);
+  };
+
+  const confirmResetDifficulty = () => {
+    Alert.alert(t('resetDifficulty'), t('resetDifficultyConfirm'), [
+      { text: t('no'), style: 'cancel' },
+      {
+        text: t('yes'),
+        style: 'destructive',
+        onPress: () => {
+          void resetDifficultyStore();
+        },
       },
     ]);
   };
@@ -227,7 +241,11 @@ export default function ParentScreen() {
 
         {savedMsg ? <Text style={styles.saved}>{t('saved')}</Text> : null}
 
-        <Pressable onPress={confirmReset} style={styles.resetBtn}>
+        <Pressable onPress={confirmResetDifficulty} style={styles.resetBtn}>
+          <Text style={styles.resetText}>{t('resetDifficulty')}</Text>
+        </Pressable>
+
+        <Pressable onPress={confirmReset} style={styles.resetBtnSecondary}>
           <Text style={styles.resetText}>{t('resetPoints')}</Text>
         </Pressable>
       </View>
@@ -321,6 +339,10 @@ const styles = StyleSheet.create({
   },
   resetBtn: {
     marginTop: spacing.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  resetBtnSecondary: {
     padding: spacing.md,
     alignItems: 'center',
   },
