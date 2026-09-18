@@ -71,8 +71,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellSelected: {
-    borderColor: colors.grassDark,
-    backgroundColor: colors.skyLight,
+    borderColor: colors.coral,
+    backgroundColor: colors.coralLight,
   },
   cellDisabled: {
     opacity: 0.35,
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   cellTextSelected: {
-    color: colors.grassDark,
+    color: colors.coral,
   },
   cellTextDisabled: {
     color: colors.inkMuted,
