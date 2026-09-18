@@ -10,10 +10,14 @@ import {
   DEFAULT_ADD_SUB_MAX,
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
+  DEFAULT_MULTIPLIER_ZONE,
   clampAddSubMax,
 } from './limits';
 import {
-  MULTIPLY_FACTOR_MAX,
+  randomMultiplierInZone,
+  type MultiplierZone,
+} from './multiplierZone';
+import {
   getEnabledNumbers,
   type TableSelection,
 } from './tableSelection';
@@ -33,28 +37,37 @@ function resolveEnabledNumbers(
 
 function pickTableMultiply(
   enabledTables: number[],
+  multiplierZone: MultiplierZone,
   profile?: DifficultyProfile,
 ): [number, number] {
   if (profile) {
-    return pickAdaptiveMultiplyFromTables(enabledTables, profile);
+    return pickAdaptiveMultiplyFromTables(enabledTables, profile, multiplierZone);
   }
 
   const table = enabledTables[randomInt(0, enabledTables.length - 1)];
-  const other = randomInt(0, MULTIPLY_FACTOR_MAX);
-  return Math.random() < 0.5 ? [table, other] : [other, table];
+  const multiplier = randomMultiplierInZone(multiplierZone);
+  if (Math.random() < 0.5 && enabledTables.includes(multiplier)) {
+    return [multiplier, table];
+  }
+  return [table, multiplier];
 }
 
 function pickTableDivide(
   enabledDivisors: number[],
+  multiplierZone: MultiplierZone,
   profile?: DifficultyProfile,
 ): { a: number; b: number; answer: number } {
   if (profile) {
-    const { divisor, quotient } = pickAdaptiveDivideFromDivisors(enabledDivisors, profile);
+    const { divisor, quotient } = pickAdaptiveDivideFromDivisors(
+      enabledDivisors,
+      profile,
+      multiplierZone,
+    );
     return { a: divisor * quotient, b: divisor, answer: quotient };
   }
 
   const divisor = enabledDivisors[randomInt(0, enabledDivisors.length - 1)];
-  const quotient = randomInt(0, MULTIPLY_FACTOR_MAX);
+  const quotient = randomMultiplierInZone(multiplierZone);
   return { a: divisor * quotient, b: divisor, answer: quotient };
 }
 
@@ -72,6 +85,7 @@ export function generateQuestion(
     limits?.divideDivisors,
     DEFAULT_DIVIDE_DIVISORS,
   );
+  const multiplierZone = limits?.multiplierZone ?? DEFAULT_MULTIPLIER_ZONE;
 
   let a: number;
   let b: number;
@@ -102,13 +116,13 @@ export function generateQuestion(
       break;
     }
     case 'multiply': {
-      [a, b] = pickTableMultiply(multiplyTables, difficulty);
+      [a, b] = pickTableMultiply(multiplyTables, multiplierZone, difficulty);
       answer = a * b;
       symbol = '×';
       break;
     }
     case 'divide': {
-      ({ a, b, answer } = pickTableDivide(divideDivisors, difficulty));
+      ({ a, b, answer } = pickTableDivide(divideDivisors, multiplierZone, difficulty));
       symbol = '÷';
       break;
     }

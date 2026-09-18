@@ -4,7 +4,10 @@ import type {
   DifficultyStore,
   OpDifficulty,
 } from './types';
-import { MULTIPLY_FACTOR_MAX } from '../tableSelection';
+import {
+  randomMultiplierInZone,
+  type MultiplierZone,
+} from '../multiplierZone';
 import type { Question } from '../types';
 
 export const MULTIPLY_EASY_MAX = 4;
@@ -264,6 +267,7 @@ function pickFromPool(pool: number[]): number {
 export function pickAdaptiveMultiplyFromTables(
   enabledTables: number[],
   profile: DifficultyProfile,
+  multiplierZone: MultiplierZone,
 ): [number, number] {
   const pool = filterNumbersByBand(enabledTables, profile.band);
   const weakPool = getWeakKeys(profile.weak, 12).filter((n) => pool.includes(n));
@@ -281,13 +285,17 @@ export function pickAdaptiveMultiplyFromTables(
     table = pickFromPool(pool);
   }
 
-  const other = randomInt(0, MULTIPLY_FACTOR_MAX);
-  return Math.random() < 0.5 ? [table, other] : [other, table];
+  const multiplier = randomMultiplierInZone(multiplierZone);
+  if (Math.random() < 0.5 && enabledTables.includes(multiplier)) {
+    return [multiplier, table];
+  }
+  return [table, multiplier];
 }
 
 export function pickAdaptiveDivideFromDivisors(
   enabledDivisors: number[],
   profile: DifficultyProfile,
+  multiplierZone: MultiplierZone,
 ): { divisor: number; quotient: number } {
   const pool = filterNumbersByBand(
     enabledDivisors.filter((n) => n >= 1),
@@ -308,6 +316,6 @@ export function pickAdaptiveDivideFromDivisors(
     divisor = pickFromPool(pool);
   }
 
-  const quotient = randomInt(0, MULTIPLY_FACTOR_MAX);
+  const quotient = randomMultiplierInZone(multiplierZone);
   return { divisor, quotient };
 }

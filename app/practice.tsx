@@ -31,6 +31,7 @@ export default function PracticeScreen() {
     addSubMax,
     multiplyTables,
     divideDivisors,
+    multiplierZone,
     addPoints,
     setStreak,
   } = useApp();
@@ -40,7 +41,7 @@ export default function PracticeScreen() {
     ? (params.op as Operation)
     : 'add';
 
-  const limits = { addSubMax, multiplyTables, divideDivisors };
+  const limits = { addSubMax, multiplyTables, divideDivisors, multiplierZone };
   const { profile, recordResult, loaded } = useDifficulty(
     operation,
     addSubMax,
@@ -50,7 +51,7 @@ export default function PracticeScreen() {
 
   const makeQuestion = useCallback(
     () => generateQuestion(operation, limits, profile),
-    [operation, addSubMax, multiplyTables, divideDivisors, profile],
+    [operation, addSubMax, multiplyTables, divideDivisors, multiplierZone, profile],
   );
 
   const [question, setQuestion] = useState<Question>(() =>

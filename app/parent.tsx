@@ -11,10 +11,12 @@ import {
 
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
+import { MultiplierZonePicker } from '@/src/components/MultiplierZonePicker';
 import { TableToggleGrid } from '@/src/components/TableToggleGrid';
 import { useApp } from '@/src/context/AppContext';
 import { useI18n } from '@/src/i18n/context';
 import { DEFAULT_ADD_SUB_MAX, clampAddSubMax } from '@/src/logic/limits';
+import type { MultiplierZone } from '@/src/logic/multiplierZone';
 import {
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
@@ -39,10 +41,12 @@ export default function ParentScreen() {
     addSubMax,
     multiplyTables,
     divideDivisors,
+    multiplierZone,
     updateChildName,
     updateAddSubMax,
     updateMultiplyTables,
     updateDivideDivisors,
+    updateMultiplierZone,
     resetPoints,
   } = useApp();
 
@@ -58,6 +62,8 @@ export default function ParentScreen() {
   const [divideSelection, setDivideSelection] = useState<TableSelection>([
     ...divideDivisors,
   ]);
+  const [multiplierZoneSelection, setMultiplierZoneSelection] =
+    useState<MultiplierZone>(multiplierZone);
   const [newPin, setNewPin] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
 
@@ -67,6 +73,13 @@ export default function ParentScreen() {
     setAddSubInput(String(addSubMax));
     setMultiplySelection([...multiplyTables]);
     setDivideSelection([...divideDivisors]);
+    setMultiplierZoneSelection(multiplierZone);
+  };
+
+  const multiplierZoneLabels: Record<MultiplierZone, string> = {
+    '0-3': t('multiplierZone_0-3'),
+    '4-9': t('multiplierZone_4-9'),
+    '0-10': t('multiplierZone_0-10'),
   };
 
   const tryUnlock = () => {
@@ -98,6 +111,7 @@ export default function ParentScreen() {
     updateDivideDivisors(
       normalizeTableSelection(divideSelection, DEFAULT_DIVIDE_DIVISORS),
     );
+    updateMultiplierZone(multiplierZoneSelection);
 
     if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
       updatePin(newPin);
@@ -209,6 +223,14 @@ export default function ParentScreen() {
         <Text style={styles.label}>{t('multiplyTables')}</Text>
         <Text style={styles.hintSmall}>{t('multiplyTablesHint')}</Text>
         <TableToggleGrid selection={multiplySelection} onChange={setMultiplySelection} />
+
+        <Text style={styles.label}>{t('multiplierZone')}</Text>
+        <Text style={styles.hintSmall}>{t('multiplierZoneHint')}</Text>
+        <MultiplierZonePicker
+          value={multiplierZoneSelection}
+          onChange={setMultiplierZoneSelection}
+          labels={multiplierZoneLabels}
+        />
 
         <Text style={styles.label}>{t('divideDivisors')}</Text>
         <Text style={styles.hintSmall}>{t('divideDivisorsHint')}</Text>

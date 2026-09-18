@@ -7,6 +7,11 @@ import {
   DEFAULT_MULTIPLY_TABLES,
 } from '@/src/logic/limits';
 import {
+  DEFAULT_MULTIPLIER_ZONE,
+  parseMultiplierZone,
+  type MultiplierZone,
+} from '@/src/logic/multiplierZone';
+import {
   migrateDivideDivisorsFromMax,
   migrateMultiplyTablesFromMax,
   normalizeTableSelection,
@@ -26,6 +31,7 @@ const KEYS = {
   addSubMax: '@ksm/addSubMax',
   multiplyTables: '@ksm/multiplyTables',
   divideDivisors: '@ksm/divideDivisors',
+  multiplierZone: '@ksm/multiplierZone',
   multiplyMax: '@ksm/multiplyMax',
   divideMax: '@ksm/divideMax',
 } as const;
@@ -45,6 +51,7 @@ export type StoredState = {
   addSubMax: number;
   multiplyTables: TableSelection;
   divideDivisors: TableSelection;
+  multiplierZone: MultiplierZone;
 };
 
 export const defaultState: StoredState = {
@@ -58,6 +65,7 @@ export const defaultState: StoredState = {
   addSubMax: DEFAULT_ADD_SUB_MAX,
   multiplyTables: [...DEFAULT_MULTIPLY_TABLES],
   divideDivisors: [...DEFAULT_DIVIDE_DIVISORS],
+  multiplierZone: DEFAULT_MULTIPLIER_ZONE,
 };
 
 export async function loadState(): Promise<StoredState> {
@@ -73,6 +81,7 @@ export async function loadState(): Promise<StoredState> {
       addSubMaxRaw,
       multiplyTablesRaw,
       divideDivisorsRaw,
+      multiplierZoneRaw,
       multiplyMaxRaw,
       divideMaxRaw,
     ] = await Promise.all([
@@ -86,6 +95,7 @@ export async function loadState(): Promise<StoredState> {
       AsyncStorage.getItem(KEYS.addSubMax),
       AsyncStorage.getItem(KEYS.multiplyTables),
       AsyncStorage.getItem(KEYS.divideDivisors),
+      AsyncStorage.getItem(KEYS.multiplierZone),
       AsyncStorage.getItem(KEYS.multiplyMax),
       AsyncStorage.getItem(KEYS.divideMax),
     ]);
@@ -115,6 +125,7 @@ export async function loadState(): Promise<StoredState> {
       addSubMax: parseInt(addSubMaxRaw ?? String(DEFAULT_ADD_SUB_MAX), 10) || DEFAULT_ADD_SUB_MAX,
       multiplyTables: normalizeTableSelection(multiplyTables, DEFAULT_MULTIPLY_TABLES),
       divideDivisors: normalizeTableSelection(divideDivisors, DEFAULT_DIVIDE_DIVISORS),
+      multiplierZone: parseMultiplierZone(multiplierZoneRaw),
     };
   } catch {
     return { ...defaultState };
@@ -159,6 +170,10 @@ export async function saveMultiplyTables(selection: TableSelection): Promise<voi
 
 export async function saveDivideDivisors(selection: TableSelection): Promise<void> {
   await AsyncStorage.setItem(KEYS.divideDivisors, tableSelectionToStorage(selection));
+}
+
+export async function saveMultiplierZone(zone: MultiplierZone): Promise<void> {
+  await AsyncStorage.setItem(KEYS.multiplierZone, zone);
 }
 
 export async function resetPoints(): Promise<void> {
