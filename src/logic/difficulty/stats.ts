@@ -4,6 +4,7 @@ import type {
   DifficultyStore,
   OpDifficulty,
 } from './types';
+import { MULTIPLY_FACTOR_MAX } from '../tableSelection';
 import type { Question } from '../types';
 
 export const MULTIPLY_EASY_MAX = 4;
@@ -64,7 +65,33 @@ function promoteBand(band: DifficultyBand): DifficultyBand {
   return 'full';
 }
 
-function questionWithinBand(question: Question, band: DifficultyBand, cap: number): boolean {
+function filterNumbersByBand(numbers: number[], band: DifficultyBand): number[] {
+  const max = maxForMultiplyBand(band, 12);
+  const filtered = numbers.filter((n) => n <= max);
+  return filtered.length > 0 ? filtered : numbers;
+}
+
+function getMultiplyTableOperands(question: Question, enabledTables: number[]): number[] {
+  return [question.a, question.b].filter((n) => enabledTables.includes(n));
+}
+
+function questionWithinBand(
+  question: Question,
+  band: DifficultyBand,
+  cap: number,
+  enabledNumbers?: number[],
+): boolean {
+  if (question.operation === 'multiply' && enabledNumbers) {
+    const anchors = getMultiplyTableOperands(question, enabledNumbers);
+    const anchor = anchors.length ? Math.max(...anchors) : Math.max(question.a, question.b);
+    return anchor <= maxForMultiplyBand(band, 12);
+  }
+  if (question.operation === 'divide' && enabledNumbers) {
+    return (
+      enabledNumbers.includes(question.b) &&
+      question.b <= maxForMultiplyBand(band, 12)
+    );
+  }
   if (question.operation === 'multiply') {
     const max = maxForMultiplyBand(band, cap);
     return question.a <= max && question.b <= max;
@@ -130,17 +157,18 @@ export function recordMultiplyResult(
   profile: OpDifficulty,
   question: Question,
   correct: boolean,
-  multiplyMax: number,
+  enabledTables: number[],
 ): OpDifficulty {
   const next = {
     ...profile,
     weak: { ...profile.weak },
   };
 
-  const factors = [question.a, question.b];
+  const factors = getMultiplyTableOperands(question, enabledTables);
+  const tracked = factors.length ? factors : [question.a, question.b];
   if (correct) {
-    factors.forEach((f) => bumpWeak(next.weak, f, -1));
-    if (questionWithinBand(question, next.band, multiplyMax)) {
+    tracked.forEach((f) => bumpWeak(next.weak, f, -1));
+    if (questionWithinBand(question, next.band, 12, enabledTables)) {
       next.bandCorrectStreak += 1;
       if (next.bandCorrectStreak >= PROMOTE_STREAK && next.band !== 'full') {
         next.band = promoteBand(next.band);
@@ -148,7 +176,7 @@ export function recordMultiplyResult(
       }
     }
   } else {
-    factors.forEach((f) => bumpWeak(next.weak, f, 2));
+    tracked.forEach((f) => bumpWeak(next.weak, f, 2));
     next.bandCorrectStreak = 0;
   }
 
@@ -159,7 +187,7 @@ export function recordDivideResult(
   profile: OpDifficulty,
   question: Question,
   correct: boolean,
-  divideMax: number,
+  enabledDivisors: number[],
 ): OpDifficulty {
   const next = {
     ...profile,
@@ -169,7 +197,7 @@ export function recordDivideResult(
   const divisor = question.b;
   if (correct) {
     bumpWeak(next.weak, divisor, -1);
-    if (questionWithinBand(question, next.band, divideMax)) {
+    if (questionWithinBand(question, next.band, 12, enabledDivisors)) {
       next.bandCorrectStreak += 1;
       if (next.bandCorrectStreak >= PROMOTE_STREAK && next.band !== 'full') {
         next.band = promoteBand(next.band);
@@ -229,44 +257,57 @@ export function pickAdaptiveSubtractPair(
   return [a, b];
 }
 
-export function pickAdaptiveMultiplyPair(
-  multiplyMax: number,
-  profile: DifficultyProfile,
-): [number, number] {
-  const maxFactor = maxForMultiplyBand(profile.band, multiplyMax);
-  const weakPool = getWeakKeys(profile.weak, maxFactor);
-
-  if (weakPool.length > 0 && Math.random() < WEAK_BIAS) {
-    const anchor = weakPool[randomInt(0, weakPool.length - 1)];
-    const other = randomInt(0, maxFactor);
-    return Math.random() < 0.5 ? [anchor, other] : [other, anchor];
-  }
-
-  if (profile.band === 'medium' && maxFactor >= 5 && Math.random() < 0.55) {
-    const hardFactor = randomInt(5, Math.min(MULTIPLY_MEDIUM_MAX, maxFactor));
-    return [hardFactor, randomInt(0, maxFactor)];
-  }
-
-  return [randomInt(0, maxFactor), randomInt(0, maxFactor)];
+function pickFromPool(pool: number[]): number {
+  return pool[randomInt(0, pool.length - 1)];
 }
 
-export function pickAdaptiveDivide(
-  divideMax: number,
+export function pickAdaptiveMultiplyFromTables(
+  enabledTables: number[],
+  profile: DifficultyProfile,
+): [number, number] {
+  const pool = filterNumbersByBand(enabledTables, profile.band);
+  const weakPool = getWeakKeys(profile.weak, 12).filter((n) => pool.includes(n));
+
+  let table: number;
+  if (weakPool.length > 0 && Math.random() < WEAK_BIAS) {
+    table = pickFromPool(weakPool);
+  } else if (profile.band === 'medium') {
+    const mediumPool = pool.filter((n) => n >= 5 && n <= MULTIPLY_MEDIUM_MAX);
+    table =
+      mediumPool.length > 0 && Math.random() < 0.55
+        ? pickFromPool(mediumPool)
+        : pickFromPool(pool);
+  } else {
+    table = pickFromPool(pool);
+  }
+
+  const other = randomInt(0, MULTIPLY_FACTOR_MAX);
+  return Math.random() < 0.5 ? [table, other] : [other, table];
+}
+
+export function pickAdaptiveDivideFromDivisors(
+  enabledDivisors: number[],
   profile: DifficultyProfile,
 ): { divisor: number; quotient: number } {
-  const maxDivisor = Math.max(1, maxForMultiplyBand(profile.band, divideMax));
-  const weakPool = getWeakKeys(profile.weak, maxDivisor).filter((n) => n >= 1);
+  const pool = filterNumbersByBand(
+    enabledDivisors.filter((n) => n >= 1),
+    profile.band,
+  );
+  const weakPool = getWeakKeys(profile.weak, 12).filter((n) => pool.includes(n));
 
   let divisor: number;
   if (weakPool.length > 0 && Math.random() < WEAK_BIAS) {
-    divisor = weakPool[randomInt(0, weakPool.length - 1)];
-  } else if (profile.band === 'medium' && maxDivisor >= 5 && Math.random() < 0.55) {
-    divisor = randomInt(5, Math.min(MULTIPLY_MEDIUM_MAX, maxDivisor));
+    divisor = pickFromPool(weakPool);
+  } else if (profile.band === 'medium') {
+    const mediumPool = pool.filter((n) => n >= 5 && n <= MULTIPLY_MEDIUM_MAX);
+    divisor =
+      mediumPool.length > 0 && Math.random() < 0.55
+        ? pickFromPool(mediumPool)
+        : pickFromPool(pool);
   } else {
-    divisor = randomInt(1, maxDivisor);
+    divisor = pickFromPool(pool);
   }
 
-  const quotientMax = Math.min(12, maxDivisor);
-  const quotient = randomInt(0, quotientMax);
+  const quotient = randomInt(0, MULTIPLY_FACTOR_MAX);
   return { divisor, quotient };
 }

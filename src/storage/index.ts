@@ -3,9 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Language } from '@/src/i18n';
 import {
   DEFAULT_ADD_SUB_MAX,
-  DEFAULT_DIVIDE_MAX,
-  DEFAULT_MULTIPLY_MAX,
+  DEFAULT_DIVIDE_DIVISORS,
+  DEFAULT_MULTIPLY_TABLES,
 } from '@/src/logic/limits';
+import {
+  migrateDivideDivisorsFromMax,
+  migrateMultiplyTablesFromMax,
+  normalizeTableSelection,
+  parseTableSelection,
+  tableSelectionToStorage,
+  type TableSelection,
+} from '@/src/logic/tableSelection';
 
 const KEYS = {
   points: '@ksm/points',
@@ -16,6 +24,8 @@ const KEYS = {
   childName: '@ksm/childName',
   targetBonus: '@ksm/targetBonus',
   addSubMax: '@ksm/addSubMax',
+  multiplyTables: '@ksm/multiplyTables',
+  divideDivisors: '@ksm/divideDivisors',
   multiplyMax: '@ksm/multiplyMax',
   divideMax: '@ksm/divideMax',
 } as const;
@@ -33,8 +43,8 @@ export type StoredState = {
   childName: string;
   targetBonus: number;
   addSubMax: number;
-  multiplyMax: number;
-  divideMax: number;
+  multiplyTables: TableSelection;
+  divideDivisors: TableSelection;
 };
 
 export const defaultState: StoredState = {
@@ -46,8 +56,8 @@ export const defaultState: StoredState = {
   childName: '',
   targetBonus: DEFAULT_TARGET_BONUS,
   addSubMax: DEFAULT_ADD_SUB_MAX,
-  multiplyMax: DEFAULT_MULTIPLY_MAX,
-  divideMax: DEFAULT_DIVIDE_MAX,
+  multiplyTables: [...DEFAULT_MULTIPLY_TABLES],
+  divideDivisors: [...DEFAULT_DIVIDE_DIVISORS],
 };
 
 export async function loadState(): Promise<StoredState> {
@@ -61,6 +71,8 @@ export async function loadState(): Promise<StoredState> {
       childNameRaw,
       targetBonusRaw,
       addSubMaxRaw,
+      multiplyTablesRaw,
+      divideDivisorsRaw,
       multiplyMaxRaw,
       divideMaxRaw,
     ] = await Promise.all([
@@ -72,9 +84,25 @@ export async function loadState(): Promise<StoredState> {
       AsyncStorage.getItem(KEYS.childName),
       AsyncStorage.getItem(KEYS.targetBonus),
       AsyncStorage.getItem(KEYS.addSubMax),
+      AsyncStorage.getItem(KEYS.multiplyTables),
+      AsyncStorage.getItem(KEYS.divideDivisors),
       AsyncStorage.getItem(KEYS.multiplyMax),
       AsyncStorage.getItem(KEYS.divideMax),
     ]);
+
+    let multiplyTables = DEFAULT_MULTIPLY_TABLES;
+    if (multiplyTablesRaw) {
+      multiplyTables = parseTableSelection(JSON.parse(multiplyTablesRaw), DEFAULT_MULTIPLY_TABLES);
+    } else if (multiplyMaxRaw) {
+      multiplyTables = migrateMultiplyTablesFromMax(parseInt(multiplyMaxRaw, 10) || 10);
+    }
+
+    let divideDivisors = DEFAULT_DIVIDE_DIVISORS;
+    if (divideDivisorsRaw) {
+      divideDivisors = parseTableSelection(JSON.parse(divideDivisorsRaw), DEFAULT_DIVIDE_DIVISORS);
+    } else if (divideMaxRaw) {
+      divideDivisors = migrateDivideDivisorsFromMax(parseInt(divideMaxRaw, 10) || 10);
+    }
 
     return {
       points: Math.round((parseFloat(pointsRaw ?? '0') || 0) * 100) / 100,
@@ -85,9 +113,8 @@ export async function loadState(): Promise<StoredState> {
       childName: childNameRaw ?? '',
       targetBonus: parseInt(targetBonusRaw ?? String(DEFAULT_TARGET_BONUS), 10) || 0,
       addSubMax: parseInt(addSubMaxRaw ?? String(DEFAULT_ADD_SUB_MAX), 10) || DEFAULT_ADD_SUB_MAX,
-      multiplyMax:
-        parseInt(multiplyMaxRaw ?? String(DEFAULT_MULTIPLY_MAX), 10) || DEFAULT_MULTIPLY_MAX,
-      divideMax: parseInt(divideMaxRaw ?? String(DEFAULT_DIVIDE_MAX), 10) || DEFAULT_DIVIDE_MAX,
+      multiplyTables: normalizeTableSelection(multiplyTables, DEFAULT_MULTIPLY_TABLES),
+      divideDivisors: normalizeTableSelection(divideDivisors, DEFAULT_DIVIDE_DIVISORS),
     };
   } catch {
     return { ...defaultState };
@@ -126,12 +153,12 @@ export async function saveAddSubMax(value: number): Promise<void> {
   await AsyncStorage.setItem(KEYS.addSubMax, String(value));
 }
 
-export async function saveMultiplyMax(value: number): Promise<void> {
-  await AsyncStorage.setItem(KEYS.multiplyMax, String(value));
+export async function saveMultiplyTables(selection: TableSelection): Promise<void> {
+  await AsyncStorage.setItem(KEYS.multiplyTables, tableSelectionToStorage(selection));
 }
 
-export async function saveDivideMax(value: number): Promise<void> {
-  await AsyncStorage.setItem(KEYS.divideMax, String(value));
+export async function saveDivideDivisors(selection: TableSelection): Promise<void> {
+  await AsyncStorage.setItem(KEYS.divideDivisors, tableSelectionToStorage(selection));
 }
 
 export async function resetPoints(): Promise<void> {

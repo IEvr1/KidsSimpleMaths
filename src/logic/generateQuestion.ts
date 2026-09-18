@@ -1,58 +1,61 @@
 import type { DifficultyProfile } from './difficulty/types';
 import {
   pickAdaptiveAddPair,
-  pickAdaptiveDivide,
-  pickAdaptiveMultiplyPair,
+  pickAdaptiveDivideFromDivisors,
+  pickAdaptiveMultiplyFromTables,
   pickAdaptiveSubtractPair,
 } from './difficulty/stats';
 import type { OperationLimits } from './limits';
 import {
   DEFAULT_ADD_SUB_MAX,
-  DEFAULT_DIVIDE_MAX,
-  DEFAULT_MULTIPLY_MAX,
+  DEFAULT_DIVIDE_DIVISORS,
+  DEFAULT_MULTIPLY_TABLES,
   clampAddSubMax,
-  clampDivideMax,
-  clampMultiplyMax,
 } from './limits';
+import {
+  MULTIPLY_FACTOR_MAX,
+  getEnabledNumbers,
+  type TableSelection,
+} from './tableSelection';
 import type { Operation, Question } from './types';
-
-const MULTIPLY_EXTRA: [number, number][] = [
-  [11, 11],
-  [12, 12],
-  [13, 13],
-  [10, 11],
-  [11, 10],
-];
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function pickMultiplyPair(multiplyMax: number, profile?: DifficultyProfile): [number, number] {
-  if (profile) {
-    return pickAdaptiveMultiplyPair(multiplyMax, profile);
-  }
-
-  const extras = MULTIPLY_EXTRA.filter(([a, b]) => a <= multiplyMax && b <= multiplyMax);
-  if (extras.length > 0 && Math.random() < 0.15) {
-    return extras[randomInt(0, extras.length - 1)];
-  }
-  return [randomInt(0, multiplyMax), randomInt(0, multiplyMax)];
+function resolveEnabledNumbers(
+  selection: TableSelection | undefined,
+  fallback: TableSelection,
+): number[] {
+  const enabled = getEnabledNumbers(selection ?? fallback);
+  return enabled.length > 0 ? enabled : getEnabledNumbers(fallback);
 }
 
-function pickDividePair(
-  divideMax: number,
+function pickTableMultiply(
+  enabledTables: number[],
+  profile?: DifficultyProfile,
+): [number, number] {
+  if (profile) {
+    return pickAdaptiveMultiplyFromTables(enabledTables, profile);
+  }
+
+  const table = enabledTables[randomInt(0, enabledTables.length - 1)];
+  const other = randomInt(0, MULTIPLY_FACTOR_MAX);
+  return Math.random() < 0.5 ? [table, other] : [other, table];
+}
+
+function pickTableDivide(
+  enabledDivisors: number[],
   profile?: DifficultyProfile,
 ): { a: number; b: number; answer: number } {
   if (profile) {
-    const { divisor, quotient } = pickAdaptiveDivide(divideMax, profile);
+    const { divisor, quotient } = pickAdaptiveDivideFromDivisors(enabledDivisors, profile);
     return { a: divisor * quotient, b: divisor, answer: quotient };
   }
 
-  const b = randomInt(1, divideMax);
-  const quotientMax = Math.min(12, divideMax);
-  const quotient = randomInt(0, quotientMax);
-  return { a: b * quotient, b, answer: quotient };
+  const divisor = enabledDivisors[randomInt(0, enabledDivisors.length - 1)];
+  const quotient = randomInt(0, MULTIPLY_FACTOR_MAX);
+  return { a: divisor * quotient, b: divisor, answer: quotient };
 }
 
 export function generateQuestion(
@@ -61,8 +64,14 @@ export function generateQuestion(
   difficulty?: DifficultyProfile,
 ): Question {
   const addSubMax = clampAddSubMax(limits?.addSubMax ?? DEFAULT_ADD_SUB_MAX);
-  const multiplyMax = clampMultiplyMax(limits?.multiplyMax ?? DEFAULT_MULTIPLY_MAX);
-  const divideMax = clampDivideMax(limits?.divideMax ?? DEFAULT_DIVIDE_MAX);
+  const multiplyTables = resolveEnabledNumbers(
+    limits?.multiplyTables,
+    DEFAULT_MULTIPLY_TABLES,
+  );
+  const divideDivisors = resolveEnabledNumbers(
+    limits?.divideDivisors,
+    DEFAULT_DIVIDE_DIVISORS,
+  );
 
   let a: number;
   let b: number;
@@ -93,24 +102,13 @@ export function generateQuestion(
       break;
     }
     case 'multiply': {
-      if (difficulty?.band === 'full') {
-        const extras = MULTIPLY_EXTRA.filter(
-          ([x, y]) => x <= multiplyMax && y <= multiplyMax,
-        );
-        if (extras.length > 0 && Math.random() < 0.12) {
-          [a, b] = extras[randomInt(0, extras.length - 1)];
-        } else {
-          [a, b] = pickMultiplyPair(multiplyMax, difficulty);
-        }
-      } else {
-        [a, b] = pickMultiplyPair(multiplyMax, difficulty);
-      }
+      [a, b] = pickTableMultiply(multiplyTables, difficulty);
       answer = a * b;
       symbol = '×';
       break;
     }
     case 'divide': {
-      ({ a, b, answer } = pickDividePair(divideMax, difficulty));
+      ({ a, b, answer } = pickTableDivide(divideDivisors, difficulty));
       symbol = '÷';
       break;
     }

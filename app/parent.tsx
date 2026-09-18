@@ -11,16 +11,16 @@ import {
 
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
+import { TableToggleGrid } from '@/src/components/TableToggleGrid';
 import { useApp } from '@/src/context/AppContext';
 import { useI18n } from '@/src/i18n/context';
+import { DEFAULT_ADD_SUB_MAX, clampAddSubMax } from '@/src/logic/limits';
 import {
-  DEFAULT_ADD_SUB_MAX,
-  DEFAULT_DIVIDE_MAX,
-  DEFAULT_MULTIPLY_MAX,
-  clampAddSubMax,
-  clampDivideMax,
-  clampMultiplyMax,
-} from '@/src/logic/limits';
+  DEFAULT_DIVIDE_DIVISORS,
+  DEFAULT_MULTIPLY_TABLES,
+  normalizeTableSelection,
+  type TableSelection,
+} from '@/src/logic/tableSelection';
 import { goHome } from '@/src/navigation/goHome';
 import { resetDifficultyStore } from '@/src/storage/difficulty';
 import { colors } from '@/src/theme/colors';
@@ -37,12 +37,12 @@ export default function ParentScreen() {
     updateGoal,
     updatePin,
     addSubMax,
-    multiplyMax,
-    divideMax,
+    multiplyTables,
+    divideDivisors,
     updateChildName,
     updateAddSubMax,
-    updateMultiplyMax,
-    updateDivideMax,
+    updateMultiplyTables,
+    updateDivideDivisors,
     resetPoints,
   } = useApp();
 
@@ -52,8 +52,12 @@ export default function ParentScreen() {
   const [goalInput, setGoalInput] = useState(String(goal));
   const [nameInput, setNameInput] = useState(childName);
   const [addSubInput, setAddSubInput] = useState(String(addSubMax));
-  const [multiplyInput, setMultiplyInput] = useState(String(multiplyMax));
-  const [divideInput, setDivideInput] = useState(String(divideMax));
+  const [multiplySelection, setMultiplySelection] = useState<TableSelection>([
+    ...multiplyTables,
+  ]);
+  const [divideSelection, setDivideSelection] = useState<TableSelection>([
+    ...divideDivisors,
+  ]);
   const [newPin, setNewPin] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
 
@@ -61,8 +65,8 @@ export default function ParentScreen() {
     setGoalInput(String(goal));
     setNameInput(childName);
     setAddSubInput(String(addSubMax));
-    setMultiplyInput(String(multiplyMax));
-    setDivideInput(String(divideMax));
+    setMultiplySelection([...multiplyTables]);
+    setDivideSelection([...divideDivisors]);
   };
 
   const tryUnlock = () => {
@@ -88,15 +92,12 @@ export default function ParentScreen() {
       updateAddSubMax(clampAddSubMax(parsedAddSub));
     }
 
-    const parsedMultiply = parseInt(multiplyInput, 10);
-    if (!Number.isNaN(parsedMultiply)) {
-      updateMultiplyMax(clampMultiplyMax(parsedMultiply));
-    }
-
-    const parsedDivide = parseInt(divideInput, 10);
-    if (!Number.isNaN(parsedDivide)) {
-      updateDivideMax(clampDivideMax(parsedDivide));
-    }
+    updateMultiplyTables(
+      normalizeTableSelection(multiplySelection, DEFAULT_MULTIPLY_TABLES),
+    );
+    updateDivideDivisors(
+      normalizeTableSelection(divideSelection, DEFAULT_DIVIDE_DIVISORS),
+    );
 
     if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
       updatePin(newPin);
@@ -205,24 +206,16 @@ export default function ParentScreen() {
           placeholderTextColor={colors.inkMuted}
         />
 
-        <Text style={styles.label}>{t('multiplyMax')}</Text>
-        <TextInput
-          keyboardType="number-pad"
-          style={styles.input}
-          value={multiplyInput}
-          onChangeText={(v) => setMultiplyInput(v.replace(/\D/g, '').slice(0, 2))}
-          placeholder={String(DEFAULT_MULTIPLY_MAX)}
-          placeholderTextColor={colors.inkMuted}
-        />
+        <Text style={styles.label}>{t('multiplyTables')}</Text>
+        <Text style={styles.hintSmall}>{t('multiplyTablesHint')}</Text>
+        <TableToggleGrid selection={multiplySelection} onChange={setMultiplySelection} />
 
-        <Text style={styles.label}>{t('divideMax')}</Text>
-        <TextInput
-          keyboardType="number-pad"
-          style={styles.input}
-          value={divideInput}
-          onChangeText={(v) => setDivideInput(v.replace(/\D/g, '').slice(0, 2))}
-          placeholder={String(DEFAULT_DIVIDE_MAX)}
-          placeholderTextColor={colors.inkMuted}
+        <Text style={styles.label}>{t('divideDivisors')}</Text>
+        <Text style={styles.hintSmall}>{t('divideDivisorsHint')}</Text>
+        <TableToggleGrid
+          selection={divideSelection}
+          onChange={setDivideSelection}
+          disabledNumbers={[0]}
         />
 
         <Text style={styles.label}>{t('setPin')}</Text>

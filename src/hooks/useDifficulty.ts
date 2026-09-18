@@ -9,15 +9,18 @@ import {
   recordSubtractResult,
 } from '@/src/logic/difficulty/stats';
 import type { DifficultyProfile, DifficultyStore } from '@/src/logic/difficulty/types';
+import { getEnabledNumbers, type TableSelection } from '@/src/logic/tableSelection';
 import type { Operation, Question } from '@/src/logic/types';
 import { loadDifficultyStore, saveDifficultyStore } from '@/src/storage/difficulty';
 
 export function useDifficulty(
   operation: Operation,
   addSubMax: number,
-  multiplyMax: number,
-  divideMax: number,
+  multiplyTables: TableSelection,
+  divideDivisors: TableSelection,
 ) {
+  const enabledMultiplyTables = getEnabledNumbers(multiplyTables);
+  const enabledDivideDivisors = getEnabledNumbers(divideDivisors);
   const [store, setStore] = useState<DifficultyStore>(createDefaultDifficultyStore());
   const [loaded, setLoaded] = useState(false);
 
@@ -54,18 +57,28 @@ export function useDifficulty(
         setStore(updated);
         saveDifficultyStore(updated);
       } else if (operation === 'multiply') {
-        const next = recordMultiplyResult(store.multiply, question, correct, multiplyMax);
+        const next = recordMultiplyResult(
+          store.multiply,
+          question,
+          correct,
+          enabledMultiplyTables,
+        );
         const updated = { ...store, multiply: next };
         setStore(updated);
         saveDifficultyStore(updated);
       } else if (operation === 'divide') {
-        const next = recordDivideResult(store.divide, question, correct, divideMax);
+        const next = recordDivideResult(
+          store.divide,
+          question,
+          correct,
+          enabledDivideDivisors,
+        );
         const updated = { ...store, divide: next };
         setStore(updated);
         saveDifficultyStore(updated);
       }
     },
-    [operation, store, addSubMax, multiplyMax, divideMax],
+    [operation, store, addSubMax, enabledMultiplyTables, enabledDivideDivisors],
   );
 
   return { profile, recordResult, loaded };

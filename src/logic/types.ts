@@ -10,7 +10,6 @@ export type Question = {
 
 export type AnswerResult = {
   pointsEarned: number;
-  streakBonus: boolean;
   newStreak: number;
   goalReached: boolean;
 };

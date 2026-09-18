@@ -8,11 +8,13 @@ import React, {
 } from 'react';
 
 import type { Language } from '@/src/i18n';
+import { clampAddSubMax } from '@/src/logic/limits';
 import {
-  clampAddSubMax,
-  clampDivideMax,
-  clampMultiplyMax,
-} from '@/src/logic/limits';
+  DEFAULT_DIVIDE_DIVISORS,
+  DEFAULT_MULTIPLY_TABLES,
+  normalizeTableSelection,
+  type TableSelection,
+} from '@/src/logic/tableSelection';
 import { roundPoints } from '@/src/logic/scoring';
 import {
   defaultState,
@@ -26,8 +28,8 @@ import {
   savePoints,
   saveStreak,
   saveTargetBonus,
-  saveDivideMax,
-  saveMultiplyMax,
+  saveDivideDivisors,
+  saveMultiplyTables,
   type StoredState,
 } from '@/src/storage';
 
@@ -41,8 +43,8 @@ type AppContextValue = StoredState & {
   updateChildName: (name: string) => void;
   updateTargetBonus: (bonus: number) => void;
   updateAddSubMax: (value: number) => void;
-  updateMultiplyMax: (value: number) => void;
-  updateDivideMax: (value: number) => void;
+  updateMultiplyTables: (selection: TableSelection) => void;
+  updateDivideDivisors: (selection: TableSelection) => void;
   resetPoints: () => Promise<void>;
   goalReached: boolean;
 };
@@ -104,16 +106,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAddSubMax(value);
   }, []);
 
-  const updateMultiplyMax = useCallback((multiplyMax: number) => {
-    const value = clampMultiplyMax(multiplyMax);
-    setState((prev) => ({ ...prev, multiplyMax: value }));
-    saveMultiplyMax(value);
+  const updateMultiplyTables = useCallback((selection: TableSelection) => {
+    const value = normalizeTableSelection(selection, DEFAULT_MULTIPLY_TABLES);
+    setState((prev) => ({ ...prev, multiplyTables: value }));
+    saveMultiplyTables(value);
   }, []);
 
-  const updateDivideMax = useCallback((divideMax: number) => {
-    const value = clampDivideMax(divideMax);
-    setState((prev) => ({ ...prev, divideMax: value }));
-    saveDivideMax(value);
+  const updateDivideDivisors = useCallback((selection: TableSelection) => {
+    const value = normalizeTableSelection(selection, DEFAULT_DIVIDE_DIVISORS);
+    setState((prev) => ({ ...prev, divideDivisors: value }));
+    saveDivideDivisors(value);
   }, []);
 
   const resetPoints = useCallback(async () => {
@@ -135,8 +137,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateChildName,
       updateTargetBonus,
       updateAddSubMax,
-      updateMultiplyMax,
-      updateDivideMax,
+      updateMultiplyTables,
+      updateDivideDivisors,
       resetPoints,
       goalReached,
     }),
@@ -151,8 +153,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateChildName,
       updateTargetBonus,
       updateAddSubMax,
-      updateMultiplyMax,
-      updateDivideMax,
+      updateMultiplyTables,
+      updateDivideDivisors,
       resetPoints,
       goalReached,
     ],

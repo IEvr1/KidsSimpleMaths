@@ -12,7 +12,7 @@ import { useDifficulty } from '@/src/hooks/useDifficulty';
 import { generateQuestion } from '@/src/logic/generateQuestion';
 import { formatPoints } from '@/src/logic/formatPoints';
 import { goHome } from '@/src/navigation/goHome';
-import { calculateScore, getPointsPerAnswer } from '@/src/logic/scoring';
+import { calculateScore } from '@/src/logic/scoring';
 import type { Operation, Question } from '@/src/logic/types';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
@@ -29,8 +29,8 @@ export default function PracticeScreen() {
     goal,
     streak,
     addSubMax,
-    multiplyMax,
-    divideMax,
+    multiplyTables,
+    divideDivisors,
     addPoints,
     setStreak,
   } = useApp();
@@ -40,17 +40,17 @@ export default function PracticeScreen() {
     ? (params.op as Operation)
     : 'add';
 
-  const limits = { addSubMax, multiplyMax, divideMax };
+  const limits = { addSubMax, multiplyTables, divideDivisors };
   const { profile, recordResult, loaded } = useDifficulty(
     operation,
     addSubMax,
-    multiplyMax,
-    divideMax,
+    multiplyTables,
+    divideDivisors,
   );
 
   const makeQuestion = useCallback(
     () => generateQuestion(operation, limits, profile),
-    [operation, addSubMax, multiplyMax, divideMax, profile],
+    [operation, addSubMax, multiplyTables, divideDivisors, profile],
   );
 
   const [question, setQuestion] = useState<Question>(() =>
@@ -60,7 +60,6 @@ export default function PracticeScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [streakBonusMsg, setStreakBonusMsg] = useState(false);
   const [emptyHint, setEmptyHint] = useState(false);
 
   const resetForQuestion = useCallback(
@@ -69,7 +68,6 @@ export default function PracticeScreen() {
       setAnswerInput('');
       setSubmitted(false);
       setFeedback(null);
-      setStreakBonusMsg(false);
       setEmptyHint(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     },
@@ -105,12 +103,11 @@ export default function PracticeScreen() {
       addPoints(result.pointsEarned);
       setStreak(result.newStreak);
       setFeedback('correct');
-      setStreakBonusMsg(result.streakBonus);
       if (result.goalReached) {
         setShowCelebration(true);
         return;
       }
-      setTimeout(nextQuestion, result.streakBonus ? 1200 : 800);
+      setTimeout(nextQuestion, 800);
     } else {
       setStreak(0);
       setFeedback('wrong');
@@ -157,11 +154,6 @@ export default function PracticeScreen() {
               ? t('correct')
               : t('wrongWithAnswer', { answer: question.answer })}
           </Text>
-          {streakBonusMsg ? (
-            <Text style={styles.bonusText}>
-              {t('streakBonus', { bonus: formatPoints(getPointsPerAnswer(operation)) })}
-            </Text>
-          ) : null}
         </View>
       ) : emptyHint ? (
         <View style={styles.feedback}>
@@ -263,12 +255,6 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.ink,
     textAlign: 'center',
-  },
-  bonusText: {
-    ...typography.label,
-    fontSize: 14,
-    color: colors.sunDark,
-    marginTop: 2,
   },
   emptyHint: {
     ...typography.label,
