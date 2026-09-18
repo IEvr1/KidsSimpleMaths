@@ -7,8 +7,7 @@ export type OpDifficulty = {
 };
 
 export type DifficultyStore = {
-  add: OpDifficulty;
-  subtract: OpDifficulty;
+  addSub: OpDifficulty;
   multiply: OpDifficulty;
   divide: OpDifficulty;
 };

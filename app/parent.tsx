@@ -21,9 +21,7 @@ import { MULTIPLIER_ZONES } from '@/src/logic/multiplierZone';
 import type { SumZone } from '@/src/logic/sumZone';
 import { SUM_ZONES } from '@/src/logic/sumZone';
 import {
-  DEFAULT_DIVIDE_DIVISORS,
-  DEFAULT_MULTIPLY_TABLES,
-  normalizeTableSelection,
+  mergeMulDivTableSelections,
   type TableSelection,
 } from '@/src/logic/tableSelection';
 import { goHome } from '@/src/navigation/goHome';
@@ -47,11 +45,9 @@ export default function ParentScreen() {
     multiplierZone,
     sumZone,
     updateChildName,
-    updateAddSubMax,
-    updateMultiplyTables,
-    updateDivideDivisors,
+    updateAddSubSettings,
+    updateMulDivTables,
     updateMultiplierZone,
-    updateSumZone,
     resetPoints,
   } = useApp();
 
@@ -61,12 +57,9 @@ export default function ParentScreen() {
   const [goalInput, setGoalInput] = useState(String(goal));
   const [nameInput, setNameInput] = useState(childName);
   const [addSubInput, setAddSubInput] = useState(String(addSubMax));
-  const [multiplySelection, setMultiplySelection] = useState<TableSelection>([
-    ...multiplyTables,
-  ]);
-  const [divideSelection, setDivideSelection] = useState<TableSelection>([
-    ...divideDivisors,
-  ]);
+  const [mulDivSelection, setMulDivSelection] = useState<TableSelection>(() =>
+    mergeMulDivTableSelections(multiplyTables, divideDivisors),
+  );
   const [multiplierZoneSelection, setMultiplierZoneSelection] =
     useState<MultiplierZone>(multiplierZone);
   const [sumZoneSelection, setSumZoneSelection] = useState<SumZone>(sumZone);
@@ -77,8 +70,7 @@ export default function ParentScreen() {
     setGoalInput(String(goal));
     setNameInput(childName);
     setAddSubInput(String(addSubMax));
-    setMultiplySelection([...multiplyTables]);
-    setDivideSelection([...divideDivisors]);
+    setMulDivSelection(mergeMulDivTableSelections(multiplyTables, divideDivisors));
     setMultiplierZoneSelection(multiplierZone);
     setSumZoneSelection(sumZone);
   };
@@ -114,18 +106,13 @@ export default function ParentScreen() {
     updateChildName(nameInput.trim().slice(0, 20));
 
     const parsedAddSub = parseInt(addSubInput, 10);
-    if (!Number.isNaN(parsedAddSub)) {
-      updateAddSubMax(clampAddSubMax(parsedAddSub));
-    }
+    const addSubValue = !Number.isNaN(parsedAddSub)
+      ? clampAddSubMax(parsedAddSub)
+      : addSubMax;
+    updateAddSubSettings(addSubValue, sumZoneSelection);
 
-    updateMultiplyTables(
-      normalizeTableSelection(multiplySelection, DEFAULT_MULTIPLY_TABLES),
-    );
-    updateDivideDivisors(
-      normalizeTableSelection(divideSelection, DEFAULT_DIVIDE_DIVISORS),
-    );
+    updateMulDivTables(mulDivSelection);
     updateMultiplierZone(multiplierZoneSelection);
-    updateSumZone(sumZoneSelection);
 
     if (newPin.length === 4 && /^\d{4}$/.test(newPin)) {
       updatePin(newPin);
@@ -222,7 +209,9 @@ export default function ParentScreen() {
         />
 
         <Text style={styles.sectionTitle}>{t('settingsMath')}</Text>
-        <Text style={styles.hintSmall}>{t('mathMaxHint')}</Text>
+
+        <Text style={styles.subsectionTitle}>{t('addSubSection')}</Text>
+        <Text style={styles.hintSmall}>{t('addSubSectionHint')}</Text>
 
         <Text style={styles.label}>{t('addSubMax')}</Text>
         <TextInput
@@ -235,7 +224,7 @@ export default function ParentScreen() {
         />
 
         <Text style={styles.label}>{t('sumZone')}</Text>
-        <Text style={styles.hintSmall}>{t('sumZoneHint')}</Text>
+        <Text style={styles.hintSmall}>{t('addSubZoneHint')}</Text>
         <SettingZonePicker
           value={sumZoneSelection}
           onChange={setSumZoneSelection}
@@ -243,25 +232,20 @@ export default function ParentScreen() {
           labels={sumZoneLabels}
         />
 
-        <Text style={styles.label}>{t('multiplyTables')}</Text>
-        <Text style={styles.hintSmall}>{t('multiplyTablesHint')}</Text>
-        <TableToggleGrid selection={multiplySelection} onChange={setMultiplySelection} />
+        <Text style={styles.subsectionTitle}>{t('mulDivSection')}</Text>
+        <Text style={styles.hintSmall}>{t('mulDivSectionHint')}</Text>
+
+        <Text style={styles.label}>{t('mulDivTables')}</Text>
+        <Text style={styles.hintSmall}>{t('mulDivTablesHint')}</Text>
+        <TableToggleGrid selection={mulDivSelection} onChange={setMulDivSelection} />
 
         <Text style={styles.label}>{t('multiplierZone')}</Text>
-        <Text style={styles.hintSmall}>{t('multiplierZoneHint')}</Text>
+        <Text style={styles.hintSmall}>{t('mulDivZoneHint')}</Text>
         <SettingZonePicker
           value={multiplierZoneSelection}
           onChange={setMultiplierZoneSelection}
           options={MULTIPLIER_ZONES}
           labels={multiplierZoneLabels}
-        />
-
-        <Text style={styles.label}>{t('divideDivisors')}</Text>
-        <Text style={styles.hintSmall}>{t('divideDivisorsHint')}</Text>
-        <TableToggleGrid
-          selection={divideSelection}
-          onChange={setDivideSelection}
-          disabledNumbers={[0]}
         />
 
         <Text style={styles.label}>{t('setPin')}</Text>
@@ -335,6 +319,13 @@ const styles = StyleSheet.create({
     color: colors.ink,
     textAlign: 'center',
     marginTop: spacing.md,
+  },
+  subsectionTitle: {
+    ...typography.subtitle,
+    fontSize: 17,
+    color: colors.ink,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   label: {
     ...typography.label,

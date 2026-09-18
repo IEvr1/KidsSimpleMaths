@@ -57,3 +57,19 @@ export function toggleTableSelection(
 export function tableSelectionToStorage(selection: TableSelection): string {
   return JSON.stringify(selection);
 }
+
+/** Divide uses the same tables as multiply; divisor 0 is never allowed. */
+export function deriveDivideDivisorsFromMultiplyTables(
+  multiplyTables: TableSelection,
+): TableSelection {
+  const divide = [...multiplyTables];
+  divide[0] = false;
+  return divide;
+}
+
+export function mergeMulDivTableSelections(
+  multiplyTables: TableSelection,
+  divideDivisors: TableSelection,
+): TableSelection {
+  return multiplyTables.map((enabled, i) => enabled || divideDivisors[i]);
+}

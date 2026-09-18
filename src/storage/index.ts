@@ -17,6 +17,8 @@ import {
   type SumZone,
 } from '@/src/logic/sumZone';
 import {
+  deriveDivideDivisorsFromMultiplyTables,
+  mergeMulDivTableSelections,
   migrateDivideDivisorsFromMax,
   migrateMultiplyTablesFromMax,
   normalizeTableSelection,
@@ -133,8 +135,23 @@ export async function loadState(): Promise<StoredState> {
       childName: childNameRaw ?? '',
       targetBonus: parseInt(targetBonusRaw ?? String(DEFAULT_TARGET_BONUS), 10) || 0,
       addSubMax: parseInt(addSubMaxRaw ?? String(DEFAULT_ADD_SUB_MAX), 10) || DEFAULT_ADD_SUB_MAX,
-      multiplyTables: normalizeTableSelection(multiplyTables, DEFAULT_MULTIPLY_TABLES),
-      divideDivisors: normalizeTableSelection(divideDivisors, DEFAULT_DIVIDE_DIVISORS),
+      multiplyTables: (() => {
+        const merged = normalizeTableSelection(
+          mergeMulDivTableSelections(multiplyTables, divideDivisors),
+          DEFAULT_MULTIPLY_TABLES,
+        );
+        return merged;
+      })(),
+      divideDivisors: (() => {
+        const merged = normalizeTableSelection(
+          mergeMulDivTableSelections(multiplyTables, divideDivisors),
+          DEFAULT_MULTIPLY_TABLES,
+        );
+        return normalizeTableSelection(
+          deriveDivideDivisorsFromMultiplyTables(merged),
+          DEFAULT_DIVIDE_DIVISORS,
+        );
+      })(),
       multiplierZone: parseMultiplierZone(multiplierZoneRaw),
       sumZone: parseSumZone(sumZoneRaw),
     };

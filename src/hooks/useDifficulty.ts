@@ -3,10 +3,9 @@ import { useCallback, useState } from 'react';
 
 import {
   createDefaultDifficultyStore,
-  recordAddResult,
+  recordAddSubDifficultyResult,
   recordDivideResult,
   recordMultiplyResult,
-  recordSubtractResult,
 } from '@/src/logic/difficulty/stats';
 import type { DifficultyProfile, DifficultyStore } from '@/src/logic/difficulty/types';
 import { getEnabledNumbers, type TableSelection } from '@/src/logic/tableSelection';
@@ -36,32 +35,25 @@ export function useDifficulty(
   );
 
   const profile: DifficultyProfile | undefined =
-    operation === 'add'
-      ? store.add
-      : operation === 'subtract'
-        ? store.subtract
-        : operation === 'multiply'
-          ? store.multiply
-          : operation === 'divide'
-            ? store.divide
-            : undefined;
+    operation === 'add' || operation === 'subtract'
+      ? store.addSub
+      : operation === 'multiply'
+        ? store.multiply
+        : operation === 'divide'
+          ? store.divide
+          : undefined;
 
   const recordResult = useCallback(
     (question: Question, correct: boolean) => {
-      if (operation === 'add') {
-        const next = recordAddResult(store.add, question, correct, addSubMax, sumZone);
-        const updated = { ...store, add: next };
-        setStore(updated);
-        saveDifficultyStore(updated);
-      } else if (operation === 'subtract') {
-        const next = recordSubtractResult(
-          store.subtract,
+      if (operation === 'add' || operation === 'subtract') {
+        const next = recordAddSubDifficultyResult(
+          store.addSub,
           question,
           correct,
           addSubMax,
           sumZone,
         );
-        const updated = { ...store, subtract: next };
+        const updated = { ...store, addSub: next };
         setStore(updated);
         saveDifficultyStore(updated);
       } else if (operation === 'multiply') {

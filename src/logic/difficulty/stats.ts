@@ -20,10 +20,40 @@ const WEAK_BIAS = 0.65;
 
 export function createDefaultDifficultyStore(): DifficultyStore {
   return {
-    add: createDefaultOpDifficulty(),
-    subtract: createDefaultOpDifficulty(),
+    addSub: createDefaultOpDifficulty(),
     multiply: createDefaultOpDifficulty(),
     divide: createDefaultOpDifficulty(),
+  };
+}
+
+export function mergeLegacyAddSubDifficulty(
+  add?: Partial<OpDifficulty>,
+  subtract?: Partial<OpDifficulty>,
+): OpDifficulty {
+  const base = createDefaultOpDifficulty();
+  const profiles = [add, subtract].filter(Boolean) as OpDifficulty[];
+
+  if (profiles.length === 0) return base;
+
+  const weak: Record<number, number> = { ...base.weak };
+  for (const profile of profiles) {
+    for (const [key, weight] of Object.entries(profile.weak ?? {})) {
+      const n = Number(key);
+      weak[n] = Math.max(weak[n] ?? 0, weight);
+    }
+  }
+
+  const bandOrder: DifficultyBand[] = ['easy', 'medium', 'full'];
+  const band = profiles.reduce<DifficultyBand>(
+    (lowest, profile) =>
+      bandOrder.indexOf(profile.band) < bandOrder.indexOf(lowest) ? profile.band : lowest,
+    'full',
+  );
+
+  return {
+    band,
+    bandCorrectStreak: Math.max(...profiles.map((p) => p.bandCorrectStreak ?? 0)),
+    weak,
   };
 }
 
@@ -140,17 +170,7 @@ function recordAddSubResult(
   return next;
 }
 
-export function recordAddResult(
-  profile: OpDifficulty,
-  question: Question,
-  correct: boolean,
-  addSubMax: number,
-  sumZone: SumZone,
-): OpDifficulty {
-  return recordAddSubResult(profile, question, correct, addSubMax, sumZone);
-}
-
-export function recordSubtractResult(
+export function recordAddSubDifficultyResult(
   profile: OpDifficulty,
   question: Question,
   correct: boolean,

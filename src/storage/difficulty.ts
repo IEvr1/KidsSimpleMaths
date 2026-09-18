@@ -1,19 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { createDefaultDifficultyStore } from '@/src/logic/difficulty/stats';
-import type { DifficultyStore } from '@/src/logic/difficulty/types';
+import {
+  createDefaultDifficultyStore,
+  mergeLegacyAddSubDifficulty,
+} from '@/src/logic/difficulty/stats';
+import type { DifficultyStore, OpDifficulty } from '@/src/logic/difficulty/types';
 
 const KEY = '@ksm/difficulty';
+
+type LegacyDifficultyStore = Partial<DifficultyStore> & {
+  add?: OpDifficulty;
+  subtract?: OpDifficulty;
+};
 
 export async function loadDifficultyStore(): Promise<DifficultyStore> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return createDefaultDifficultyStore();
-    const parsed = JSON.parse(raw) as Partial<DifficultyStore>;
+    const parsed = JSON.parse(raw) as LegacyDifficultyStore;
     const defaults = createDefaultDifficultyStore();
+
+    const addSub =
+      parsed.addSub != null
+        ? { ...defaults.addSub, ...parsed.addSub }
+        : mergeLegacyAddSubDifficulty(parsed.add, parsed.subtract);
+
     return {
-      add: { ...defaults.add, ...parsed.add },
-      subtract: { ...defaults.subtract, ...parsed.subtract },
+      addSub,
       multiply: { ...defaults.multiply, ...parsed.multiply },
       divide: { ...defaults.divide, ...parsed.divide },
     };

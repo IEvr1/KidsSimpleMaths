@@ -14,6 +14,7 @@ import type { SumZone } from '@/src/logic/sumZone';
 import {
   DEFAULT_DIVIDE_DIVISORS,
   DEFAULT_MULTIPLY_TABLES,
+  deriveDivideDivisorsFromMultiplyTables,
   normalizeTableSelection,
   type TableSelection,
 } from '@/src/logic/tableSelection';
@@ -47,8 +48,10 @@ type AppContextValue = StoredState & {
   updateChildName: (name: string) => void;
   updateTargetBonus: (bonus: number) => void;
   updateAddSubMax: (value: number) => void;
+  updateAddSubSettings: (addSubMax: number, sumZone: SumZone) => void;
   updateMultiplyTables: (selection: TableSelection) => void;
   updateDivideDivisors: (selection: TableSelection) => void;
+  updateMulDivTables: (selection: TableSelection) => void;
   updateMultiplierZone: (zone: MultiplierZone) => void;
   updateSumZone: (zone: SumZone) => void;
   resetPoints: () => Promise<void>;
@@ -112,6 +115,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAddSubMax(value);
   }, []);
 
+  const updateAddSubSettings = useCallback((addSubMax: number, sumZone: SumZone) => {
+    const value = clampAddSubMax(addSubMax);
+    setState((prev) => ({ ...prev, addSubMax: value, sumZone }));
+    saveAddSubMax(value);
+    saveSumZone(sumZone);
+  }, []);
+
   const updateMultiplyTables = useCallback((selection: TableSelection) => {
     const value = normalizeTableSelection(selection, DEFAULT_MULTIPLY_TABLES);
     setState((prev) => ({ ...prev, multiplyTables: value }));
@@ -122,6 +132,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const value = normalizeTableSelection(selection, DEFAULT_DIVIDE_DIVISORS);
     setState((prev) => ({ ...prev, divideDivisors: value }));
     saveDivideDivisors(value);
+  }, []);
+
+  const updateMulDivTables = useCallback((selection: TableSelection) => {
+    const multiply = normalizeTableSelection(selection, DEFAULT_MULTIPLY_TABLES);
+    const divide = normalizeTableSelection(
+      deriveDivideDivisorsFromMultiplyTables(multiply),
+      DEFAULT_DIVIDE_DIVISORS,
+    );
+    setState((prev) => ({ ...prev, multiplyTables: multiply, divideDivisors: divide }));
+    saveMultiplyTables(multiply);
+    saveDivideDivisors(divide);
   }, []);
 
   const updateMultiplierZone = useCallback((multiplierZone: MultiplierZone) => {
@@ -153,8 +174,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateChildName,
       updateTargetBonus,
       updateAddSubMax,
+      updateAddSubSettings,
       updateMultiplyTables,
       updateDivideDivisors,
+      updateMulDivTables,
       updateMultiplierZone,
       updateSumZone,
       resetPoints,
@@ -171,8 +194,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updateChildName,
       updateTargetBonus,
       updateAddSubMax,
+      updateAddSubSettings,
       updateMultiplyTables,
       updateDivideDivisors,
+      updateMulDivTables,
       updateMultiplierZone,
       updateSumZone,
       resetPoints,
