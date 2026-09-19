@@ -66,9 +66,11 @@ export const el = {
   saveGoal: 'Αποθήκευση στόχου',
   resetPoints: 'Μηδενισμός πόντων',
   resetConfirm: 'Να μηδενιστούν οι πόντοι;',
+  pointsResetDone: 'Οι πόντοι μηδενίστηκαν!',
   resetDifficulty: 'Επαναφορά στατιστικών δυσκολίας',
   resetDifficultyConfirm:
     'Να επαναφερθούν τα επίπεδα δυσκολίας και οι αδύναμοι αριθμοί σε όλες τις πράξεις;',
+  difficultyResetDone: 'Τα στατιστικά δυσκολίας επαναφέρθηκαν!',
   yes: 'Ναι',
   no: 'Όχι',
   saved: 'Αποθηκεύτηκε!',

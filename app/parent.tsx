@@ -1,13 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { PrimaryButton } from '@/src/components/PrimaryButton';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
@@ -26,6 +19,7 @@ import {
 } from '@/src/logic/tableSelection';
 import { goHome } from '@/src/navigation/goHome';
 import { resetDifficultyStore } from '@/src/storage/difficulty';
+import { confirmAction } from '@/src/utils/confirmAction';
 import { colors } from '@/src/theme/colors';
 import { spacing } from '@/src/theme/spacing';
 import { typography } from '@/src/theme/typography';
@@ -65,6 +59,7 @@ export default function ParentScreen() {
   const [sumZoneSelection, setSumZoneSelection] = useState<SumZone>(sumZone);
   const [newPin, setNewPin] = useState('');
   const [savedMsg, setSavedMsg] = useState(false);
+  const [resetMsg, setResetMsg] = useState<string | null>(null);
 
   const loadSettings = () => {
     setGoalInput(String(goal));
@@ -123,28 +118,31 @@ export default function ParentScreen() {
     setTimeout(() => setSavedMsg(false), 2000);
   };
 
+  const showResetMsg = (message: string) => {
+    setResetMsg(message);
+    setTimeout(() => setResetMsg(null), 2000);
+  };
+
   const confirmReset = () => {
-    Alert.alert(t('resetPoints'), t('resetConfirm'), [
-      { text: t('no'), style: 'cancel' },
-      {
-        text: t('yes'),
-        style: 'destructive',
-        onPress: () => resetPoints(),
+    confirmAction(
+      t('resetPoints'),
+      t('resetConfirm'),
+      () => {
+        void resetPoints().then(() => showResetMsg(t('pointsResetDone')));
       },
-    ]);
+      { yes: t('yes'), no: t('no') },
+    );
   };
 
   const confirmResetDifficulty = () => {
-    Alert.alert(t('resetDifficulty'), t('resetDifficultyConfirm'), [
-      { text: t('no'), style: 'cancel' },
-      {
-        text: t('yes'),
-        style: 'destructive',
-        onPress: () => {
-          void resetDifficultyStore();
-        },
+    confirmAction(
+      t('resetDifficulty'),
+      t('resetDifficultyConfirm'),
+      () => {
+        void resetDifficultyStore().then(() => showResetMsg(t('difficultyResetDone')));
       },
-    ]);
+      { yes: t('yes'), no: t('no') },
+    );
   };
 
   if (!unlocked) {
@@ -263,6 +261,7 @@ export default function ParentScreen() {
         <PrimaryButton label={t('saveSettings')} onPress={saveSettings} />
 
         {savedMsg ? <Text style={styles.saved}>{t('saved')}</Text> : null}
+        {resetMsg ? <Text style={styles.saved}>{resetMsg}</Text> : null}
 
         <Pressable onPress={confirmResetDifficulty} style={styles.resetBtn}>
           <Text style={styles.resetText}>{t('resetDifficulty')}</Text>
